@@ -10,7 +10,7 @@ If you're on linux, most things should work.
 If you're on macOS, I'm working on a script.
 If you're on Windows, I have no idea how to make it work.
 
-You will only need to have `docker` installed and its service active and running.
+You will only need to have `docker` installed and its service active and running (on systemd distros, you can check via `sudo systemctl status docker`).
 
 Before starting, download the tarballs containing all the dependencies needed to build OIIO:
 
