@@ -18,6 +18,8 @@ Before starting, download the tarballs containing all the dependencies needed to
 chmod +x ./download_tarballs.sh && ./download_tarballs.sh
 ```
 
+The Dockerfile will currently copy the `tarballs` directory into the image in an effort to keep the build process free from the need to access the internet (as much as it's possible). 
+
 If everything went fine, you should have this:
 
 ``` shell
