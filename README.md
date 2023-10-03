@@ -1,6 +1,10 @@
 # README
 
-## Requirements
+## What problem does this repo solve
+
+Since OpenImageIO is written in C++, the task of compiling it correctly can prove to be very boring and error prone, so I have automated most of it through Docker.
+
+### Requirements
 
 If you're on linux, most things should work.
 If you're on macOS, I'm working on a script.
@@ -8,15 +12,29 @@ If you're on Windows, I have no idea how to make it work.
 
 You will only need to have `docker` installed and its service active and running.
 
-## What problem does this repo solve
+Before starting, download the tarballs containing all the dependencies needed to build OIIO:
 
-Since OpenImageIO is written in C++, the task of compiling it correctly can prove to be very boring and error prone, so I have automated most of it through Docker.
-
-This means you can do something like this:
 ``` shell
-# Download the tarballs containing all the dependencies needed to build OIIO
 chmod +x ./download_tarballs.sh && ./download_tarballs.sh
+```
 
+If everything went fine, you should have this:
+
+``` shell
+$ tree tarballs
+tarballs
+├── boost_1_81_0.tar.bz2
+├── LibRaw-0.21.1.tar.gz
+├── OpenEXR_v2.4.15.0.tar.gz
+├── OpenImageIO_v2.4.15.0.tar.gz
+├── tiff-4.0.10.tar.gz
+└── zlib-1.3.tar.gz
+```
+
+### Running the build
+
+To perform a build of OIIO, you can do something like this:
+``` shell
 # Run the dockerized build of OIIO (this might take a bit)
 make docker-build
 
@@ -24,10 +42,10 @@ make docker-build
 make docker-export
 ```
 
-to run the whole build process inside a Docker container and finally the copy the compiled bits back to your own filesystem.
+This will run the whole build process inside a Docker container and finally the copy the compiled bits back to your own filesystem.
 All libraries and binaries are patched so that they are easily relocatable.
-The final result will be a `oiio-dist.tar.gz` tarballs whose content looks like this:
 
+The final result will be a `oiio-dist.tar.gz` tarballs whose content looks like this:
 ```bash
 $ tar -xvf oiio-dist.tar.gz
 $ tree dist -L 2 
@@ -75,7 +93,7 @@ This workflow uses a multi-stage `Dockerfile`.
 
 There are 2 stages:
 - build-stage (Build OIIO and its libraries)
-- export-stage (Export our Rust app) 
+- export-stage (Export the compiled bits back to your filesystem)
 
 These stages will:
 - [build-stage] Compile all third-party libraries required by OpenImageIO
@@ -83,6 +101,6 @@ These stages will:
 - [build-stage] Compile OpenImageIO and link against these third-party libraries
 - [build-stage] Copy the required share libraries (.so files) needed to use OIIO at runtime
 - [build-stage] Use `patchelf` to set the RPATH of all libraries to be relative
-  - This effectively makes them easy to relocate 
+  - This effectively makes them easy to relocate and move around
 - [export-stage] Copy a tarball (`oiio-dist.tar.gz`) into your local filesystem
   - This will contain the required headers and libs and binaries
