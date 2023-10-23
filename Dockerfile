@@ -7,6 +7,11 @@ FROM aswf/ci-base:2023.1 as build-stage
 RUN alias ll='ls -hl'
 RUN yum update -y && yum install tree -y
 
+# for pyenv
+ARG PYTHON_VERSION_FULL=3.9.10
+# for pybind11
+ARG PYTHON_VERSION_SHORT=3.9
+
 # In order not to depend on the outer internet, this Dockerfile tries to only
 # rely on local files. This means that before running it, you will need to
 # have downloaded all of the tarballs required to compile the various
@@ -71,6 +76,39 @@ RUN cd LibRaw-0.21.1 \
     && make install \
     && cd ../.. && rm -rf download
 
+# OpenColorIO tar build
+ARG OpenColorIO_ROOT=/opt/OpenColorIO
+ARG OpenColorIO_BUILD_ROOT=/opt/OpenColorIO/dist
+ARG OPENCOLORIO_BUILDOPTS="-DOCIO_BUILD_APPS=OFF -DOCIO_BUILD_NUKE=OFF \
+                           -DOCIO_BUILD_DOCS=OFF -DOCIO_BUILD_TESTS=OFF \
+                           -DOCIO_BUILD_GPU_TESTS=OFF \
+                           -DOCIO_BUILD_PYTHON=OFF -DOCIO_BUILD_PYGLUE=OFF \
+                           -DOCIO_BUILD_JAVA=OFF \
+                           -DBUILD_SHARED_LIBS=ON"
+WORKDIR ${OpenColorIO_ROOT}
+RUN cp ${TARBALLS_ROOT}/OpenColorIO_v2.3.0.tar.gz . \
+    && tar -xvf OpenColorIO_v2.3.0.tar.gz
+RUN cd OpenColorIO-2.3.0 \
+    && mkdir build \
+    && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release \
+           -DCMAKE_INSTALL_PREFIX=${OpenColorIO_BUILD_ROOT} \
+           -DCMAKE_CXX_FLAGS="-Wno-unused-function -Wno-deprecated-declarations -Wno-cast-qual -Wno-write-strings" \
+           ${OPENCOLORIO_BUILDOPTS} ${OpenColorIO_ROOT}/OpenColorIO-2.3.0 \
+    && cmake --build . --config Release --target install
+# Fix weird syntax error that occurs from build
+RUN sed -i "s;.\#define ZLIB_VERSION \"1.3\"; ;g" ${OpenColorIO_BUILD_ROOT}/lib64/cmake/OpenColorIO/OpenColorIOConfig.cmake
+
+
+# Install specific python
+ENV PYENV_ROOT=/opt/pyenv
+RUN git clone https://github.com/pyenv/pyenv.git ${PYENV_ROOT}
+ENV PATH ${PYENV_ROOT}/shims:${PYENV_ROOT}/bin:${PATH}
+
+RUN pyenv install ${PYTHON_VERSION_FULL}
+RUN pyenv global ${PYTHON_VERSION_FULL}
+RUN pyenv rehash
+
 ARG OIIO_ROOT=/opt/OpenImageIO
 WORKDIR ${OIIO_ROOT}
 
@@ -81,19 +119,36 @@ WORKDIR ${OIIO_ROOT}/OpenImageIO-2.4.15.0
 # Compile libjpeg-turbo
 # TODO: Use a tarball here too
 # https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/BUILDING.md
+ARG JPEGTurbo_ROOT=/opt/OpenImageIO/OpenImageIO-2.4.15.0/src/build-scripts/ext/dist
 RUN cd src/build-scripts \
     && ./build_libjpeg-turbo.bash
 
+# Compile OpenColorIO
+#ARG OpenColorIO_ROOT=/opt/OpenImageIO/OpenImageIO-2.4.15.0/src/build-scripts/ext/dist
+#RUN cd src/build-scripts \
+#    && ./build_opencolorio.bash
+# Fix weird syntax error that occurs from build
+#RUN sed -i "s;.\#define ZLIB_VERSION \"1.3\"; ;g" ${OpenColorIO_ROOT}/lib64/cmake/OpenColorIO/OpenColorIOConfig.cmake
+
+# Compile pybind11
+ENV PYBIND11_PYTHON_VERSION ${PYTHON_VERSION_SHORT}
+ENV PYTHON_VERSION ${PYTHON_VERSION_SHORT}
+
+RUN cd src/build-scripts \
+    && ./build_pybind11.bash
+
 # Copy and compile OpenImageIO
-RUN pwd \
+RUN which python \
+    pwd \
     && tree -L 2 -d \
-    && make -j $(nproc) USE_PYTHON=0 USE_TBB=0 USE_NUKE=0 BUILD_SHARED_LIBS=1 USE_QT=0 \
+    && make -j $(nproc) USE_PYTHON=1 USE_TBB=0 USE_NUKE=0 BUILD_SHARED_LIBS=1 USE_QT=0 \
     Boost_ROOT=${BOOST_ROOT} \
     ZLIB_ROOT=${ZLIB_ROOT}/build \
     LibRaw_ROOT=${LIBRAW_ROOT} \
     TIFF_ROOT=${TIFF_ROOT} \
     OpenEXR_ROOT=${OPENEXR_ROOT}/dist \
-    JPEGTurbo_ROOT=${OIIO_ROOT}/src/build-scripts/ext/dist \
+    OpenColorIO_ROOT=${OpenColorIO_BUILD_ROOT} \
+    JPEGTurbo_ROOT=${JPEGTurbo_ROOT} \
     Imath_DIR=${OPENEXR_ROOT}/dist/lib64/cmake/Imath
 
 # Create a tarball of the OIIO build
@@ -121,7 +176,7 @@ RUN cp -r ${OIIO_ROOT}/OpenImageIO-2.4.15.0/dist . \
     && rm -rf dist/lib64/cmake \
     && rm -rf dist/lib64/pkgconfig \
     && rmdir third-party-libs \
-    && patchelf --set-rpath '$ORIGIN' dist/lib64/*
+    && patchelf --set-rpath '$ORIGIN' $(find dist/lib64/ -maxdepth 1 -type f)
 
 # Patch the binaries
 RUN patchelf --set-rpath '$ORIGIN/../lib64' dist/bin/*
