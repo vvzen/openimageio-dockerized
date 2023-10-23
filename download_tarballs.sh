@@ -19,5 +19,7 @@ cd tarballs
 [ ! -f OpenEXR_v2.4.15.0.tar.gz ] && wget https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v3.2.1.tar.gz -O OpenEXR_v2.4.15.0.tar.gz
 # OpenImageIO
 [ ! -f OpenImageIO_v2.4.15.0.tar.gz ] && wget https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.4.15.0.tar.gz -O OpenImageIO_v2.4.15.0.tar.gz
+# OpenColorIO
+[ ! -f OpenColorIO_v2.3.0.tar.gz ] && wget https://github.com/AcademySoftwareFoundation/OpenColorIO/archive/refs/tags/v2.3.0.tar.gz -O OpenColorIO_v2.3.0.tar.gz
 # Zlib
 [ ! -f zlib-1.3.tar.gz ] && wget https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz
