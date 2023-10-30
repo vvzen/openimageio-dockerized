@@ -7,27 +7,10 @@ FROM aswf/ci-base:2023.1 as build-stage
 RUN alias ll='ls -hl'
 RUN yum update -y && yum install tree -y
 
-# TODO: move to separate config file
 # Notes on variable names:
 # PYENV_VERSION is reserved by pyenv for python version to use
 # PYTHON_VERSION is reserved by pybind11 for python version to build for (set latter)
 
-# for pyenv
-ARG PYTHON_PYENV_VERSION=2.3.31
-ARG PYTHON_VERSION_FULL=3.9.10
-# for pybind11
-ARG PYTHON_VERSION_SHORT=3.9
-
-# Dependency Versions
-ARG LIBJPEGTURBO_VERSION=3.0.0
-ARG LIBTIFF_VERION=4.0.10
-ARG LIBRAW_VERSION=0.21.1
-ARG ZLIB_VERSION=1.3
-ARG PYBIND11_VERSION=2.11.1
-ARG BOOST_VERSION=1_81_0
-ARG OPENEXR_VERSION=2.4.15.0
-ARG OPENCOLORIO_VERSION=2.3.0
-ARG OPENIMAGEIO_VESION=2.4.15.0
 # In order not to depend on the outer internet, this Dockerfile tries to only
 # rely on local files. This means that before running it, you will need to
 # have downloaded all of the tarballs required to compile the various
@@ -37,6 +20,7 @@ WORKDIR ${TARBALLS_ROOT}
 COPY tarballs ${TARBALLS_ROOT}
 
 # Compile ZLIB
+ARG ZLIB_VERSION=1.3
 ARG ZLIB_ROOT=/opt/zlib
 WORKDIR ${ZLIB_ROOT}
 RUN cp ${TARBALLS_ROOT}/zlib-${ZLIB_VERSION}.tar.gz . \
@@ -46,6 +30,7 @@ RUN cp ${TARBALLS_ROOT}/zlib-${ZLIB_VERSION}.tar.gz . \
     && cmake --build build --config Release --target install
 
 # Compile OpenEXR
+ARG OPENEXR_VERSION=2.4.15.0
 ARG OPENEXR_ROOT=/opt/openexr
 WORKDIR ${OPENEXR_ROOT}
 RUN cp ${TARBALLS_ROOT}/OpenEXR_v${OPENEXR_VERSION}.tar.gz . \
@@ -58,6 +43,7 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${OPEN
     && cmake --build build --target install --config Release
 
 # Compile Boost
+ARG BOOST_VERSION=1_81_0
 ARG BOOST_ROOT=/opt/boost
 WORKDIR ${BOOST_ROOT}/download
 RUN cp ${TARBALLS_ROOT}/boost_${BOOST_VERSION}.tar.bz2 . \
@@ -68,6 +54,7 @@ RUN cd boost_${BOOST_VERSION} \
     && rm -rf ${BOOST_ROOT}/download
 
 # libtiff
+ARG LIBTIFF_VERION=4.0.10
 ARG TIFF_ROOT=/opt/tiff
 WORKDIR ${TIFF_ROOT}/download
 RUN cp ${TARBALLS_ROOT}/tiff-${LIBTIFF_VERION}.tar.gz . \
@@ -81,6 +68,7 @@ RUN cd tiff-${LIBTIFF_VERION} \
     && make install
 
 # libraw
+ARG LIBRAW_VERSION=0.21.1
 ARG LIBRAW_ROOT=/opt/libraw
 WORKDIR ${LIBRAW_ROOT}/download
 RUN cp ${TARBALLS_ROOT}/LibRaw-${LIBRAW_VERSION}.tar.gz . \
@@ -91,7 +79,24 @@ RUN cd LibRaw-${LIBRAW_VERSION} \
     && make install \
     && cd ../.. && rm -rf download
 
+
+# Compile libjpeg-turbo
+ARG LIBJPEGTURBO_VERSION=3.0.0
+ARG JPEGTurbo_ROOT=/opt/libjpeg-turbo
+ARG LIBJPEGTURBO_INSTALL_DIR=${JPEGTurbo_ROOT}/dist
+WORKDIR ${JPEGTurbo_ROOT}
+RUN cp ${TARBALLS_ROOT}/libjpeg-turbo_v${LIBJPEGTURBO_VERSION}.tar.gz . \
+    && tar -xvf libjpeg-*
+RUN cd libjpeg-turbo-${LIBJPEGTURBO_VERSION} \
+    && mkdir build \
+    && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release \
+             -DCMAKE_INSTALL_PREFIX=${LIBJPEGTURBO_INSTALL_DIR} \
+             .. \
+    && cmake --build . --config Release --target install
+
 # OpenColorIO tar build
+ARG OPENCOLORIO_VERSION=2.3.0
 ARG OpenColorIO_ROOT=/opt/OpenColorIO
 ARG OpenColorIO_INSTALL_DIR=${OpenColorIO_ROOT}/dist
 WORKDIR ${OpenColorIO_ROOT}
@@ -116,7 +121,9 @@ RUN cd OpenColorIO-${OPENCOLORIO_VERSION} \
 RUN sed -i "s;.\#define ZLIB_VERSION \"${ZLIB_VERSION}\"; ;g" ${OpenColorIO_INSTALL_DIR}/lib64/cmake/OpenColorIO/OpenColorIOConfig.cmake
 
 
-# Install specific python
+# Install specific python with pyenv
+ARG PYTHON_PYENV_VERSION=2.3.31
+ARG PYTHON_VERSION_FULL=3.9.10
 ARG PYENV_BASE_DIR=/opt/pyenv
 WORKDIR ${PYENV_BASE_DIR}
 RUN cp ${TARBALLS_ROOT}/pyenv-${PYTHON_PYENV_VERSION}.tar.gz . \
@@ -130,21 +137,9 @@ RUN pyenv install ${PYTHON_VERSION_FULL}
 RUN pyenv global ${PYTHON_VERSION_FULL}
 RUN pyenv rehash
 
-# Compile libjpeg-turbo
-ARG JPEGTurbo_ROOT=/opt/libjpeg-turbo
-ARG LIBJPEGTURBO_INSTALL_DIR=${JPEGTurbo_ROOT}/dist
-WORKDIR ${JPEGTurbo_ROOT}
-RUN cp ${TARBALLS_ROOT}/libjpeg-turbo_v${LIBJPEGTURBO_VERSION}.tar.gz . \
-    && tar -xvf libjpeg-*
-RUN cd libjpeg-turbo-${LIBJPEGTURBO_VERSION} \
-    && mkdir build \
-    && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release \
-             -DCMAKE_INSTALL_PREFIX=${LIBJPEGTURBO_INSTALL_DIR} \
-             .. \
-    && cmake --build . --config Release --target install
-
 # Compile pybind11
+ARG PYBIND11_VERSION=2.11.1
+ARG PYTHON_VERSION_SHORT=3.9
 ENV PYBIND11_PYTHON_VERSION ${PYTHON_VERSION_SHORT}
 ENV PYTHON_VERSION ${PYTHON_VERSION_SHORT}
 ARG PYBIND11_ROOT=/opt/pybind11
@@ -163,7 +158,8 @@ RUN  cd pybind11-${PYBIND11_VERSION} \
              .. \
     && cmake --build . --config Release --target install
 
-# Copy and compile OpenImageIO
+# Compile OpenImageIO
+ARG OPENIMAGEIO_VESION=2.4.15.0
 ARG OIIO_ROOT=/opt/OpenImageIO
 WORKDIR ${OIIO_ROOT}
 RUN cp ${TARBALLS_ROOT}/OpenImageIO_v${OPENIMAGEIO_VESION}.tar.gz . \
