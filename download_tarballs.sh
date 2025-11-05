@@ -8,7 +8,7 @@ cd tarballs
 # TODO: add sha256 checks for every tarball
 
 # Boost
-[ ! -f boost_1_81_0.tar.bz2 ] && wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.bz2
+[ ! -f boost_1_81_0.tar.bz2 ] && wget https://archives.boost.io/release/1.81.0/source/boost_1_81_0.tar.bz2
 # libjpeg-turbo
 [ ! -f libjpeg-turbo_v3.0.0.tar.gz ] && wget https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/3.0.0.tar.gz -O libjpeg-turbo_v3.0.0.tar.gz
 # libtiff
