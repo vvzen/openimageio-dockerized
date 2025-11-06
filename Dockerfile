@@ -1,4 +1,4 @@
-FROM aswf/ci-base:2023.1 as build-stage
+FROM aswf/ci-base:2023.1 AS build-stage
 
 # NOTE: Most of the RUN steps have been split out in order to
 # take advantage of Docker's built-in caching mechanism.
@@ -133,5 +133,5 @@ RUN tar -czf ${OIIO_TARBALL_NAME} dist \
     && rm -rf ./dist \
     && rm libs_to_copy.txt
 
-FROM scratch as export-stage
+FROM scratch AS export-stage
 COPY --from=build-stage /opt/oiio-dist/oiio-dist.tar.gz .
