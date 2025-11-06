@@ -5,6 +5,8 @@ set -e
 mkdir -p tarballs
 cd tarballs
 
+oiio_version=3.1.6.2
+
 # TODO: add sha256 checks for every tarball
 
 # Boost
@@ -18,6 +20,6 @@ cd tarballs
 # OpenEXR
 [ ! -f OpenEXR_v2.4.15.0.tar.gz ] && wget https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v3.2.1.tar.gz -O OpenEXR_v2.4.15.0.tar.gz
 # OpenImageIO
-[ ! -f OpenImageIO_v2.4.15.0.tar.gz ] && wget https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.4.15.0.tar.gz -O OpenImageIO_v2.4.15.0.tar.gz
+[ ! -f OpenImageIO_v$oiio_version.tar.gz ] && wget https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v$oiio_version.tar.gz -O OpenImageIO_v$oiio_version.tar.gz
 # Zlib
 [ ! -f zlib-1.3.tar.gz ] && wget https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz

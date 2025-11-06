@@ -74,20 +74,22 @@ RUN cd LibRaw-0.21.1 \
 ARG OIIO_ROOT=/opt/OpenImageIO
 WORKDIR ${OIIO_ROOT}
 
-RUN cp ${TARBALLS_ROOT}/OpenImageIO_v2.4.15.0.tar.gz . \
-    && tar -xvf OpenImageIO_v2.4.15.0.tar.gz
-WORKDIR ${OIIO_ROOT}/OpenImageIO-2.4.15.0
+ARG OIIO_VERSION=3.1.6.2
+RUN cp ${TARBALLS_ROOT}/OpenImageIO_v${OIIO_VERSION}.tar.gz . \
+    && tar -xvf OpenImageIO_v${OIIO_VERSION}.tar.gz
+WORKDIR ${OIIO_ROOT}/OpenImageIO-${OIIO_VERSION}
 
-# Compile libjpeg-turbo
-# TODO: Use a tarball here too
+# Compile libjpeg-turbo and OpenColorIO
 # https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/BUILDING.md
 RUN cd src/build-scripts \
-    && ./build_libjpeg-turbo.bash
+    && ./build_libjpeg-turbo.bash \
+    && ./build_opencolorio.bash
 
 # Copy and compile OpenImageIO
 RUN pwd \
     && tree -L 2 -d \
-    && make -j $(nproc) USE_PYTHON=0 USE_TBB=0 USE_NUKE=0 BUILD_SHARED_LIBS=1 USE_QT=0 \
+    && make -j $(nproc) OpenImageIO_BUILD_MISSING_DEPS=all \
+    USE_PYTHON=0 USE_TBB=0 USE_NUKE=0 BUILD_SHARED_LIBS=1 USE_QT=0 \
     Boost_ROOT=${BOOST_ROOT} \
     ZLIB_ROOT=${ZLIB_ROOT}/build \
     LibRaw_ROOT=${LIBRAW_ROOT} \
@@ -106,17 +108,17 @@ RUN yum install patchelf -y
 
 # Copy all the .so files needed by OIIO, except for the ones
 # that should be installed on the system (so in /usr and /lib)
-RUN ldd ${OIIO_ROOT}/OpenImageIO-2.4.15.0/dist/lib64/libOpenImageIO.so \
+RUN ldd ${OIIO_ROOT}/OpenImageIO-${OIIO_VERSION}/dist/lib64/libOpenImageIO.so \
     | awk '{ print $3 }' | tr -s '\n' \
     | grep '/opt' \
     > libs_to_copy.txt \
     && mkdir third-party-libs \
     && xargs -a libs_to_copy.txt cp -t third-party-libs \
-    && cp ${OIIO_ROOT}/OpenImageIO-2.4.15.0/src/build-scripts/ext/dist/lib64/*.so.* third-party-libs
+    && cp ${OIIO_ROOT}/OpenImageIO-${OIIO_VERSION}/src/build-scripts/ext/dist/lib64/*.so.* third-party-libs
 
 # Flatten all of the libs into the lib64 directory
 # and patch their RPATH
-RUN cp -r ${OIIO_ROOT}/OpenImageIO-2.4.15.0/dist . \
+RUN cp -r ${OIIO_ROOT}/OpenImageIO-${OIIO_VERSION}/dist . \
     && mv third-party-libs/* dist/lib64 \
     && rm -rf dist/lib64/cmake \
     && rm -rf dist/lib64/pkgconfig \
