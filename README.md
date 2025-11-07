@@ -23,14 +23,19 @@ The Dockerfile will currently copy the `tarballs` directory into the image in an
 If everything went fine, you should have this:
 
 ``` shell
-$ tree tarballs
-tarballs
+$ tree tarballs/
+tarballs/
 ├── boost_1_81_0.tar.bz2
+├── libjpeg-turbo_v3.0.0.tar.gz
 ├── LibRaw-0.21.1.tar.gz
 ├── OpenEXR_v2.4.15.0.tar.gz
 ├── OpenImageIO_v2.4.15.0.tar.gz
+├── OpenImageIO_v3.1.6.2.tar.gz
+├── OpenImageIO_v3.1.7.0.tar.gz
 ├── tiff-4.0.10.tar.gz
 └── zlib-1.3.tar.gz
+
+1 directory, 9 files
 ```
 
 ### Running the build
@@ -50,8 +55,7 @@ All libraries and binaries are patched so that they are easily relocatable.
 The final result will be a `oiio-dist.tar.gz` tarballs whose content looks like this:
 ```bash
 $ tar -xvf oiio-dist.tar.gz
-$ tree dist -L 2 
-tree dist -L 2
+$ tree dist -L 2
 dist
 ├── bin
 │   ├── iconvert
@@ -64,27 +68,25 @@ dist
 ├── include
 │   └── OpenImageIO
 ├── lib64
-│   ├── libboost_atomic.so.1.81.0
-│   ├── libboost_chrono.so.1.81.0
-│   ├── libboost_filesystem.so.1.81.0
-│   ├── libboost_thread.so.1.81.0
 │   ├── libjpeg.so.62
-│   ├── libjpeg.so.62.3.0
-│   ├── libOpenImageIO.so -> libOpenImageIO.so.2.4
-│   ├── libOpenImageIO.so.2.4 -> libOpenImageIO.so.2.4.15
-│   ├── libOpenImageIO.so.2.4.15
-│   ├── libOpenImageIO_Util.so -> libOpenImageIO_Util.so.2.4
-│   ├── libOpenImageIO_Util.so.2.4
-│   ├── libOpenImageIO_Util.so.2.4.15
+│   ├── libjpeg.so.62.4.0
+│   ├── libOpenColorIO.so.2.4
+│   ├── libOpenColorIO.so.2.4.2
+│   ├── libOpenImageIO.so -> libOpenImageIO.so.3.1
+│   ├── libOpenImageIO.so.3.1 -> libOpenImageIO.so.3.1.6
+│   ├── libOpenImageIO.so.3.1.6
+│   ├── libOpenImageIO_Util.so -> libOpenImageIO_Util.so.3.1
+│   ├── libOpenImageIO_Util.so.3.1
+│   ├── libOpenImageIO_Util.so.3.1.6
 │   ├── libraw_r.so.23
 │   ├── libtiff.so.5
 │   ├── libturbojpeg.so.0
-│   └── libturbojpeg.so.0.2.0
+│   └── libturbojpeg.so.0.4.0
 └── share
     ├── doc
     └── fonts
 
-8 directories, 23 files
+8 directories, 21 files
 ```
 
 Running through Docker also helps standardize the build steps so that the whole process is easily reproducible. The Dockerfile starts building using the `aswf/ci-base:2023.1` image as a base.
