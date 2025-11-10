@@ -6,11 +6,11 @@ Since OpenImageIO is written in C++, the task of compiling it correctly can prov
 
 ### Requirements
 
-If you're on linux, most things should work.
-If you're on macOS, I'm working on a script.
+If you're on linux or macOS, most things should work.
 If you're on Windows, I have no idea how to make it work.
 
-You will only need to have `docker` installed and its service active and running (on systemd distros, you can check via `sudo systemctl status docker`).
+You will only need to have `docker` installed and its service active and running (on systemd distros, you can check via `sudo systemctl status docker`, on macOS if you're using colima you'll just need a `colima start`).
+You will also need to install `docker-buildx`, see: <https://docs.docker.com/go/buildx> .
 
 Before starting, download the tarballs containing all the dependencies needed to build OIIO:
 
@@ -105,6 +105,6 @@ These stages will:
 - [build-stage] Compile OpenImageIO and link against these third-party libraries
 - [build-stage] Copy the required share libraries (.so files) needed to use OIIO at runtime
 - [build-stage] Use `patchelf` to set the RPATH of all libraries to be relative
-  - This effectively makes them easy to relocate and move around
+  - This makes them easy to relocate and install wherever you want
 - [export-stage] Copy a tarball (`oiio-dist.tar.gz`) into your local filesystem
   - This will contain the required headers and libs and binaries
