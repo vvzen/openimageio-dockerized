@@ -1,10 +1,13 @@
 IMAGE_TAG=vv-oiio-build
 
-docker-build:
-	docker build --platform linux/amd64 . -t $(IMAGE_TAG) --target build-stage
+download:
+	bash download_tarballs.sh
 
-docker-run:
+build: download
+	docker buildx build --platform linux/amd64 . -t $(IMAGE_TAG) --target build-stage
+
+run: build
 	docker run -it -t $(IMAGE_TAG) bash
 
-docker-export:
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --progress=plain . -t $(IMAGE_TAG) --target export-stage --output .
+export: build
+	docker buildx build --platform linux/amd64 --progress=plain . -t $(IMAGE_TAG) --target export-stage --output .

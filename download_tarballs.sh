@@ -23,3 +23,5 @@ oiio_version=3.1.6.2
 [ ! -f OpenImageIO_v$oiio_version.tar.gz ] && wget https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v$oiio_version.tar.gz -O OpenImageIO_v$oiio_version.tar.gz
 # Zlib
 [ ! -f zlib-1.3.tar.gz ] && wget https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz
+
+echo "All tarballs were downloaded."

@@ -15,7 +15,7 @@ You will only need to have `docker` installed and its service active and running
 Before starting, download the tarballs containing all the dependencies needed to build OIIO:
 
 ``` shell
-chmod +x ./download_tarballs.sh && ./download_tarballs.sh
+make download
 ```
 
 The Dockerfile will currently copy the `tarballs` directory into the image in an effort to keep the build process free from the need to access the internet (as much as it's possible). 
@@ -43,10 +43,10 @@ tarballs/
 To perform a build of OIIO, you can do something like this:
 ``` shell
 # Run the dockerized build of OIIO (this might take a bit)
-make docker-build
+make build
 
 # Copy the final tarball containing the final dist (libs+binaries)
-make docker-export
+make export
 ```
 
 This will run the whole build process inside a Docker container and finally the copy the compiled bits back to your own filesystem.
